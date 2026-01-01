@@ -1,0 +1,37 @@
+# Бинарные файлы Rust
+/target/
+**/target/
+
+# Cargo.lock - мы хотим его отслеживать, поэтому он не в .gitignore
+
+# Файлы окружения
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Логи
+*.log
+logs/
+
+# Временные файлы
+tmp/
+temp/
+*.tmp
+
+# Docker
+**/Dockerfile*
+**/docker-compose*
+
+# Бинарные файлы
+**/target/debug/
+**/target/release/
+**/target/deps/
+**/target/.rustc_info.json
+
+# Кэш
+**/.cargo/
