@@ -24,7 +24,7 @@ temp/
 *.tmp
 
 # Docker
-**/Dockerfile*
+# **/Dockerfile*
 **/docker-compose*
 
 # Бинарные файлы
