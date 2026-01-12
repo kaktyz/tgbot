@@ -1,5 +1,5 @@
 # Используем официальный образ Rust
-FROM rust:1.83 as builder
+FROM --platform=linux/amd64 rust:1.83 as builder
 
 # Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /usr/src/app
@@ -17,8 +17,8 @@ COPY src ./src
 # Собираем проект
 RUN cargo build --release
 
-# Финальный образ на основе Debian
-FROM debian:bookworm-slim
+# Финальный образ также под AMD64
+FROM --platform=linux/amd64 debian:bookworm-slim
 
 # Устанавливаем зависимости для работы бинарника
 RUN apt-get update && apt-get install -y \
