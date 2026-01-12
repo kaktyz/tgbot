@@ -184,6 +184,18 @@ async fn run(bot: Bot, allowed_chat_id: i64) {
     log::info!("Диспетчер завершил работу");
 }
 
+// Функция для создания клавиатуры с кнопками
+fn create_keyboard() -> InlineKeyboardMarkup {
+    InlineKeyboardMarkup::new(vec![
+        vec![
+            // Кнопка для получения IP-адреса
+            InlineKeyboardButton::callback("Получить IP", "get_ip"),
+            // Кнопка для генерации случайного числа
+            InlineKeyboardButton::callback("Случайное число", "get_random"),
+        ]
+    ])
+}
+
 // Обработчик сообщений
 async fn message_handler(bot: Bot, msg: Message, allowed_chat_id: i64) -> ResponseResult<()> {
     log::info!("Получено сообщение от пользователя: {}, тип чата: {:?}", msg.chat.id.0, msg.chat.kind);
@@ -198,20 +210,13 @@ async fn message_handler(bot: Bot, msg: Message, allowed_chat_id: i64) -> Respon
     log::info!("Сообщение из разрешенного чата, создаем клавиатуру");
 
     // Создаем клавиатуру с двумя кнопками
-    let keyboard = InlineKeyboardMarkup::new(vec![
-        vec![
-            // Кнопка для получения IP-адреса
-            InlineKeyboardButton::callback("Получить IP", "get_ip"),
-            // Кнопка для генерации случайного числа
-            InlineKeyboardButton::callback("Случайное число", "get_random"),
-        ]
-    ]);
+    let keyboard = create_keyboard();
 
     // Отправляем сообщение пользователю с клавиатурой
     bot.send_message(msg.chat.id, "Выберите действие:")
         .reply_markup(keyboard)
         .await?;
-    
+
     log::info!("Сообщение с клавиатурой отправлено пользователю: {}", msg.chat.id.0);
 
     Ok(())
@@ -220,14 +225,14 @@ async fn message_handler(bot: Bot, msg: Message, allowed_chat_id: i64) -> Respon
 // Обработчик callback-запросов
 async fn callback_handler(bot: Bot, cq: CallbackQuery, allowed_chat_id: i64) -> ResponseResult<()> {
     log::info!("Получен callback query: {:?}", cq.data);
-    
+
     // Проверяем, что callback пришел из разрешенного чата
     if let Some(ref msg) = cq.message {
         // Извлекаем ID чата из сообщения
         let chat_id = msg.chat.id.0;
-        
+
         log::info!("Проверка чата: ожидаем {}, получили {}", allowed_chat_id, chat_id);
-        
+
         // Проверяем, что чат разрешен
         if chat_id != allowed_chat_id {
             // Отправляем ответ, чтобы убрать "часики" ожидания
@@ -245,35 +250,47 @@ async fn callback_handler(bot: Bot, cq: CallbackQuery, allowed_chat_id: i64) -> 
     // Проверяем, что callback query содержит данные (data)
     if let Some(data) = cq.data {
         log::info!("Обработка callback с данными: {}", data);
-        
+
         // В зависимости от нажатой кнопки выполняем соответствующее действие
         match data.as_str() {
             // Если нажата кнопка "Получить IP"
             "get_ip" => {
                 // Получаем IP-адрес
                 let ip_address = bot_functions::get_ip_address().await;
-                
+
                 log::info!("Получен IP-адрес: {}", ip_address);
-                
+
                 // Отправляем результат пользователю
                 if let Some(ref msg) = cq.message {
                     bot.send_message(msg.chat.id, format!("Ваш IP-адрес: {}", ip_address))
                         .await?;
                     log::info!("Отправлено сообщение с IP-адресом");
+
+                    // Отправляем сообщение с клавиатурой снова
+                    bot.send_message(msg.chat.id, "Выберите действие:")
+                        .reply_markup(create_keyboard())
+                        .await?;
+                    log::info!("Сообщение с клавиатурой отправлено снова");
                 }
             },
             // Если нажата кнопка "Случайное число"
             "get_random" => {
                 // Генерируем случайное число
                 let random_number = bot_functions::generate_random_number();
-                
+
                 log::info!("Сгенерировано случайное число: {}", random_number);
-                
+
                 // Отправляем результат пользователю
                 if let Some(ref msg) = cq.message {
                     bot.send_message(msg.chat.id, format!("Случайное число: {}", random_number))
                         .await?;
                     log::info!("Отправлено сообщение со случайным числом");
+
+                    // Отправляем сообщение с клавиатурой снова
+                    bot.send_message(msg.chat.id, "Выберите действие:")
+                        .reply_markup(create_keyboard())
+                        .await?;
+                    log::info!("Сообщение с клавиатурой отправлено снова");
                 }
             },
             // Если данные не совпадают ни с одной кнопкой
@@ -281,6 +298,12 @@ async fn callback_handler(bot: Bot, cq: CallbackQuery, allowed_chat_id: i64) -> 
                 log::warn!("Получены неизвестные данные в callback: {}", data);
                 if let Some(ref msg) = cq.message {
                     bot.send_message(msg.chat.id, "Неизвестная команда").await?;
+
+                    // Отправляем сообщение с клавиатурой снова
+                    bot.send_message(msg.chat.id, "Выберите действие:")
+                        .reply_markup(create_keyboard())
+                        .await?;
+                    log::info!("Сообщение с клавиатурой отправлено снова");
                 }
             }
         }
@@ -293,7 +316,7 @@ async fn callback_handler(bot: Bot, cq: CallbackQuery, allowed_chat_id: i64) -> 
     // Отвечаем на callback query, чтобы убрать "часики" ожидания
     bot.answer_callback_query(&cq.id).await?;
     log::info!("Callback query обработан успешно");
-    
+
     Ok(())
 }
 
